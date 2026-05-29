@@ -77,6 +77,11 @@ Et voici un exemple de fonction de mon `script.js` (front) avec `fetch` pour ré
 
 ![exemple_function](public/src/img/readme/exemple%20fonction%20avec%20fetch.png)
 
+## Interface JavaScript dynamique
+
+L’interface repose sur une logique JavaScript dynamique permettant de mettre à jour l’affichage sans rechargement complet de la page.  
+Par exemple, les véhicules sont affichés dynamiquement depuis les données récupérées en backend via `fetch`, le formulaire change de rôle selon le contexte (ajout ou modification), les modales s’ouvrent selon le véhicule sélectionné, la barre de recherche filtre les résultats en temps réel, et le bouton de vote adapte visuellement son état lorsqu’un vote a déjà été effectué.
+
 ## quelque chose à ajouter ?
 
 L’interface visuelle reste extrêmement simple, puisque je me suis concentré sur l’aspect technique du travail afin d’être certain de ne rien rater d’important au niveau du barème.  
