@@ -17,7 +17,7 @@ Je me suis simplement permis d’ajuster légèrement le schéma de dossier dema
 
 ## fonctionnement backend :
 
-voici déjà ma base de donnée, crée et utilisée pour l'occasion.
+voici déjà ma base de donnée, créée et utilisée pour l'occasion.
 
 ![Ma_BDD](public/src/img/readme/1.%20BDD.png)
 
@@ -65,9 +65,17 @@ Des cartes assez simples pour les lister et pour les modales, afin de démontrer
 
 ![cartes](public/src/img/readme/visuel%20des%20cartes.png)
 
+Une barre de recherche fonctionnelle qui peut filtrer les véhicules selon leur nom ou leur catégorie :
+
+![search_bar](public/src/img/readme/barre%20de%20recherche%20fonctionnelle.png)
+
 Tout est ici bien connecté et fonctionnel sur cette logique, j'ai pensé à la petite subtilité demandée, comme le fait d'ajouter un bouton visuellement différent pour ce qui est du vote déjà accompli.
 
 ![vote_button](public/src/img/readme/déjà%20voté%20bouton.png)
+
+Et voici un exemple de fonction de mon `script.js` (front) avec `fetch` pour récupérer les données en backend :
+
+![exemple_function](public/src/img/readme/exemple%20fonction%20avec%20fetch.png)
 
 ## quelque chose à ajouter ?
 
