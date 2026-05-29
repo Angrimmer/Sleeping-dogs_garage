@@ -6,6 +6,7 @@ const path = require('path');
 const db = require('./src/models/db');
 const authRoutes = require('./src/routes/auth');
 const vehicleRoutes = require('./src/routes/vehicles');
+const voteRoutes = require('./src/routes/votes');
 
 const app = express();
 
@@ -13,8 +14,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.use('/auth', authRoutes);
 app.use('/vehicles', vehicleRoutes);
+app.use('/vehicles', voteRoutes);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

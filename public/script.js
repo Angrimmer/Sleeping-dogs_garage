@@ -103,6 +103,20 @@ if (vehicleModal) {
   });
 }
 
+function getVotedVehicles() {
+  return JSON.parse(localStorage.getItem('votedVehicles') || '[]');
+}
+
+function saveVotedVehicle(vehicleId) {
+  const votedVehicles = getVotedVehicles();
+  const id = Number(vehicleId);
+
+  if (!votedVehicles.includes(id)) {
+    votedVehicles.push(id);
+    localStorage.setItem('votedVehicles', JSON.stringify(votedVehicles));
+  }
+}
+
 function renderVehicles(vehicles) {
   if (!vehicleList) return;
 
@@ -113,8 +127,11 @@ function renderVehicles(vehicles) {
     return;
   }
 
+  const votedVehicles = getVotedVehicles();
+
   vehicles.forEach((vehicle) => {
     const card = document.createElement('div');
+    const alreadyVoted = votedVehicles.includes(Number(vehicle.id));
     card.classList.add('vehicle-card');
 
     card.innerHTML = `
@@ -127,7 +144,12 @@ function renderVehicles(vehicles) {
 
       <div class="vehicle-actions">
         <button class="details-btn" data-id="${vehicle.id}">Voir plus</button>
-        <button class="vote-btn" data-id="${vehicle.id}">Voter</button>
+        <button 
+          class="vote-btn ${alreadyVoted ? 'voted' : ''}" 
+          data-id="${vehicle.id}"
+          ${alreadyVoted ? 'disabled' : ''}>
+          ${alreadyVoted ? 'Déjà voté' : 'Voter'}
+        </button>
         <button class="edit-btn" data-id="${vehicle.id}">Modifier</button>
         <button class="delete-btn" data-id="${vehicle.id}">Supprimer</button>
       </div>
@@ -168,7 +190,16 @@ function addVoteEvents() {
         alert(data.message);
 
         if (response.ok) {
-          loadVehicles();
+          button.textContent = 'Déjà voté';
+          button.disabled = true;
+          button.classList.add('voted');
+        }
+
+        if (response.ok || response.status === 409) {
+          saveVotedVehicle(vehicleId);
+          button.textContent = 'Déjà voté';
+          button.disabled = true;
+          button.classList.add('voted');
         }
       } catch (error) {
         console.error('Erreur lors du vote :', error);
