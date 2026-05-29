@@ -53,11 +53,14 @@ et voici ici la suite de requêtes postman utilisées pour vérifier les différ
 10. voir les votes
 ![quels_votes](public/src/img/readme/8,7.getvehiculevote%20ok%20!.png)
 
+11. Bonus :  
+J’ai ajouté Helmet au projet. Ce middleware permet d’ajouter plusieurs en-têtes de sécurité côté backend, ce qui constitue un bonus intéressant sur l’aspect sécurité.
+
 ## la logique frontend
 
 Voilà une idée de la logique front : 
 
-Un formulaire "ajout" qui prends la place d'un modificateur quand on appuie sur le bouton lié d'un véhicule (pour compte connecté)
+Un formulaire "ajout" qui prend la place d'un modificateur quand on appuie sur le bouton lié d'un véhicule (pour compte connecté)
 
 ![formulaire](public/src/img/readme/Ajouter%20formulaire.png)
 
