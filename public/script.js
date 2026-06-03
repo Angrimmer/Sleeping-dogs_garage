@@ -2,7 +2,6 @@ const API_URL = 'http://localhost:3000';
 let editingVehicleId = null;
 let allVehicles = [];
 
-// Éléments index.html
 const vehicleList = document.getElementById('vehicle-list');
 const logoutBtn = document.getElementById('logout-btn');
 const addVehicleForm = document.getElementById('add-vehicle-form');
@@ -11,35 +10,54 @@ const vehicleModal = document.getElementById('vehicle-modal');
 const modalBody = document.getElementById('modal-body');
 const closeModalBtn = document.getElementById('close-modal');
 
-// Éléments login.html
 const loginForm = document.getElementById('login-form');
-
-// Éléments register.html
 const registerForm = document.getElementById('register-form');
-
-// Élément commun éventuel
 const message = document.getElementById('message');
 
+function clearElement(element) {
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+}
 
-// =========================
-// Partie index.html
-// =========================
+function createTextElement(tag, text) {
+  const element = document.createElement(tag);
+  element.textContent = text;
+  return element;
+}
+
+function createInfoLine(label, value) {
+  const p = document.createElement('p');
+  p.textContent = `${label} : ${value ?? ''}`;
+  return p;
+}
+
+function isValidHttpUrl(value) {
+  if (!value) return true;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 async function loadVehicles() {
   try {
-    console.log('Chargement véhicules...');
     const response = await fetch(`${API_URL}/vehicles`);
-    console.log('Status fetch :', response.status);
+    const vehicles = await response.json();
 
-    const text = await response.text();
-    console.log('Réponse brute :', text);
-
-    allVehicles = JSON.parse(text);
+    allVehicles = vehicles;
     renderVehicles(allVehicles);
   } catch (error) {
     console.error('Erreur chargement véhicules :', error);
+
     if (vehicleList) {
-      vehicleList.innerHTML = `<p>Erreur lors du chargement des véhicules.</p>`;
+      clearElement(vehicleList);
+      vehicleList.appendChild(
+        createTextElement('p', 'Erreur lors du chargement des véhicules.')
+      );
     }
   }
 }
@@ -56,6 +74,19 @@ function closeModal() {
   }
 }
 
+function renderVehicleDetails(vehicle) {
+  clearElement(modalBody);
+
+  modalBody.appendChild(createTextElement('h2', vehicle.name));
+  modalBody.appendChild(createInfoLine('Catégorie', vehicle.category));
+  modalBody.appendChild(createInfoLine('Prix', vehicle.price));
+  modalBody.appendChild(createInfoLine('Vitesse max', vehicle.top_speed));
+  modalBody.appendChild(
+    createInfoLine('Description', vehicle.description || 'Aucune description.')
+  );
+  modalBody.appendChild(createInfoLine('Votes', vehicle.vote_count ?? 0));
+}
+
 function addDetailsEvents() {
   const detailButtons = document.querySelectorAll('.details-btn');
 
@@ -63,7 +94,8 @@ function addDetailsEvents() {
     button.addEventListener('click', async () => {
       const vehicleId = button.dataset.id;
 
-      modalBody.innerHTML = `<p>Chargement...</p>`;
+      clearElement(modalBody);
+      modalBody.appendChild(createTextElement('p', 'Chargement...'));
       openModal();
 
       try {
@@ -71,21 +103,24 @@ function addDetailsEvents() {
         const vehicle = await response.json();
 
         if (!response.ok) {
-          modalBody.innerHTML = `<p>${vehicle.message || 'Erreur lors du chargement du véhicule.'}</p>`;
+          clearElement(modalBody);
+          modalBody.appendChild(
+            createTextElement(
+              'p',
+              vehicle.message || 'Erreur lors du chargement du véhicule.'
+            )
+          );
           return;
         }
 
-        modalBody.innerHTML = `
-          <h2>${vehicle.name}</h2>
-          <p><strong>Catégorie :</strong> ${vehicle.category}</p>
-          <p><strong>Prix :</strong> ${vehicle.price}</p>
-          <p><strong>Vitesse max :</strong> ${vehicle.top_speed}</p>
-          <p><strong>Description :</strong> ${vehicle.description || 'Aucune description.'}</p>
-          <p><strong>Votes :</strong> ${vehicle.vote_count ?? 0}</p>
-        `;
+        renderVehicleDetails(vehicle);
       } catch (error) {
         console.error('Erreur chargement détail véhicule :', error);
-        modalBody.innerHTML = `<p>Erreur serveur ou réseau.</p>`;
+
+        clearElement(modalBody);
+        modalBody.appendChild(
+          createTextElement('p', 'Erreur serveur ou réseau.')
+        );
       }
     });
   });
@@ -117,13 +152,21 @@ function saveVotedVehicle(vehicleId) {
   }
 }
 
+function createButton(text, className, vehicleId) {
+  const button = document.createElement('button');
+  button.textContent = text;
+  button.classList.add(className);
+  button.dataset.id = vehicleId;
+  return button;
+}
+
 function renderVehicles(vehicles) {
   if (!vehicleList) return;
 
-  vehicleList.innerHTML = '';
+  clearElement(vehicleList);
 
   if (!vehicles.length) {
-    vehicleList.innerHTML = '<p>Aucun véhicule trouvé.</p>';
+    vehicleList.appendChild(createTextElement('p', 'Aucun véhicule trouvé.'));
     return;
   }
 
@@ -131,30 +174,42 @@ function renderVehicles(vehicles) {
 
   vehicles.forEach((vehicle) => {
     const card = document.createElement('div');
-    const alreadyVoted = votedVehicles.includes(Number(vehicle.id));
     card.classList.add('vehicle-card');
 
-    card.innerHTML = `
-      <h3>${vehicle.name}</h3>
-      <p>Catégorie : ${vehicle.category}</p>
-      <p>Prix : ${vehicle.price}</p>
-      <p>Vitesse max : ${vehicle.top_speed}</p>
-      <p>Description : ${vehicle.description || ''}</p>
-      <p>Votes : ${vehicle.vote_count}</p>
+    const alreadyVoted = votedVehicles.includes(Number(vehicle.id));
 
-      <div class="vehicle-actions">
-        <button class="details-btn" data-id="${vehicle.id}">Voir plus</button>
-        <button 
-          class="vote-btn ${alreadyVoted ? 'voted' : ''}" 
-          data-id="${vehicle.id}"
-          ${alreadyVoted ? 'disabled' : ''}>
-          ${alreadyVoted ? 'Déjà voté' : 'Voter'}
-        </button>
-        <button class="edit-btn" data-id="${vehicle.id}">Modifier</button>
-        <button class="delete-btn" data-id="${vehicle.id}">Supprimer</button>
-      </div>
-    `;
+    card.appendChild(createTextElement('h3', vehicle.name));
+    card.appendChild(createInfoLine('Catégorie', vehicle.category));
+    card.appendChild(createInfoLine('Prix', vehicle.price));
+    card.appendChild(createInfoLine('Vitesse max', vehicle.top_speed));
+    card.appendChild(createInfoLine('Description', vehicle.description || ''));
+    card.appendChild(createInfoLine('Votes', vehicle.vote_count));
 
+    const actions = document.createElement('div');
+    actions.classList.add('vehicle-actions');
+
+    const detailsBtn = createButton('Voir plus', 'details-btn', vehicle.id);
+
+    const voteBtn = createButton(
+      alreadyVoted ? 'Déjà voté' : 'Voter',
+      'vote-btn',
+      vehicle.id
+    );
+
+    if (alreadyVoted) {
+      voteBtn.disabled = true;
+      voteBtn.classList.add('voted');
+    }
+
+    const editBtn = createButton('Modifier', 'edit-btn', vehicle.id);
+    const deleteBtn = createButton('Supprimer', 'delete-btn', vehicle.id);
+
+    actions.appendChild(detailsBtn);
+    actions.appendChild(voteBtn);
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+
+    card.appendChild(actions);
     vehicleList.appendChild(card);
   });
 
@@ -189,12 +244,6 @@ function addVoteEvents() {
         const data = await response.json();
         alert(data.message);
 
-        if (response.ok) {
-          button.textContent = 'Déjà voté';
-          button.disabled = true;
-          button.classList.add('voted');
-        }
-
         if (response.ok || response.status === 409) {
           saveVotedVehicle(vehicleId);
           button.textContent = 'Déjà voté';
@@ -215,23 +264,16 @@ function addEditEvents() {
   editButtons.forEach((button) => {
     button.addEventListener('click', () => {
       const vehicleId = Number(button.dataset.id);
+      const vehicle = allVehicles.find((v) => Number(v.id) === vehicleId);
 
-      const card = button.closest('.vehicle-card');
-      if (!card) return;
+      if (!vehicle) return;
 
-      const vehicleName = card.querySelector('h3')?.textContent || '';
-      const paragraphs = card.querySelectorAll('p');
-
-      const category = paragraphs[0]?.textContent.replace('Catégorie : ', '') || '';
-      const price = paragraphs[1]?.textContent.replace('Prix : ', '') || '';
-      const topSpeed = paragraphs[2]?.textContent.replace('Vitesse max : ', '') || '';
-      const description = paragraphs[3]?.textContent.replace('Description : ', '') || '';
-
-      document.getElementById('name').value = vehicleName;
-      document.getElementById('category').value = category;
-      document.getElementById('price').value = price;
-      document.getElementById('top_speed').value = topSpeed;
-      document.getElementById('description').value = description;
+      document.getElementById('name').value = vehicle.name || '';
+      document.getElementById('category').value = vehicle.category || '';
+      document.getElementById('price').value = vehicle.price || '';
+      document.getElementById('top_speed').value = vehicle.top_speed || '';
+      document.getElementById('image_url').value = vehicle.image_url || '';
+      document.getElementById('description').value = vehicle.description || '';
 
       editingVehicleId = vehicleId;
 
@@ -263,9 +305,7 @@ function addDeleteEvents() {
 
       const confirmDelete = confirm('Voulez-vous vraiment supprimer ce véhicule ?');
 
-      if (!confirmDelete) {
-        return;
-      }
+      if (!confirmDelete) return;
 
       try {
         const response = await fetch(`${API_URL}/vehicles/${vehicleId}`, {
@@ -312,11 +352,6 @@ if (logoutBtn) {
   });
 }
 
-
-// =========================
-// Ajout / modification véhicule
-// =========================
-
 if (addVehicleForm) {
   addVehicleForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -335,6 +370,13 @@ if (addVehicleForm) {
     const top_speed = document.getElementById('top_speed').value.trim();
     const image_url = document.getElementById('image_url').value.trim();
     const description = document.getElementById('description').value.trim();
+
+    if (!isValidHttpUrl(image_url)) {
+      if (message) {
+        message.textContent = "L'URL de l'image doit commencer par http:// ou https://";
+      }
+      return;
+    }
 
     try {
       const url = editingVehicleId
@@ -385,11 +427,6 @@ if (addVehicleForm) {
   });
 }
 
-
-// =========================
-// Partie login.html
-// =========================
-
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -432,11 +469,6 @@ if (loginForm) {
   });
 }
 
-
-// =========================
-// Partie register.html
-// =========================
-
 if (registerForm) {
   registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -478,11 +510,6 @@ if (registerForm) {
     }
   });
 }
-
-
-// =========================
-// Initialisation
-// =========================
 
 if (vehicleList) {
   loadVehicles();

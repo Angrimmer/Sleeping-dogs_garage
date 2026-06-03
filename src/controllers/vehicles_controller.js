@@ -1,14 +1,83 @@
 const db = require('../models/db');
+const sanitizeHtml = require('sanitize-html');
+
+const cleanText = (value = '') => {
+  return sanitizeHtml(String(value), {
+    allowedTags: [],
+    allowedAttributes: {}
+  }).trim();
+};
+
+const isValidHttpUrl = (value) => {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const isValidPositiveNumber = (value) => {
+  return (
+    value !== undefined &&
+    value !== null &&
+    value !== '' &&
+    !Number.isNaN(Number(value)) &&
+    Number(value) >= 0
+  );
+};
+
+const validateVehicleData = (data) => {
+  const name = cleanText(data.name);
+  const category = cleanText(data.category);
+  const description = cleanText(data.description);
+  const image_url = cleanText(data.image_url);
+  const price = data.price;
+  const top_speed = data.top_speed;
+
+  if (!name || !category || !description || !image_url || price === '' || top_speed === '') {
+    return {
+      error: 'Tous les champs sont obligatoires'
+    };
+  }
+
+  if (!isValidPositiveNumber(price) || !isValidPositiveNumber(top_speed)) {
+    return {
+      error: 'Le prix et la vitesse doivent être des nombres positifs'
+    };
+  }
+
+  if (!isValidHttpUrl(image_url)) {
+    return {
+      error: "L'URL de l'image doit commencer par http:// ou https://"
+    };
+  }
+
+  return {
+    vehicle: {
+      name,
+      category,
+      price: Number(price),
+      top_speed: Number(top_speed),
+      image_url,
+      description
+    }
+  };
+};
 
 const addVehicle = async (req, res) => {
   try {
-    const { name, category, price, top_speed, image_url, description } = req.body;
+    const validation = validateVehicleData(req.body);
 
-    if (!name || !category) {
+    if (validation.error) {
       return res.status(400).json({
-        message: 'Le nom et la catégorie sont obligatoires'
+        message: validation.error
       });
     }
+
+    const { name, category, price, top_speed, image_url, description } = validation.vehicle;
 
     const sql = `
       INSERT INTO vehicles (name, category, price, top_speed, image_url, description)
@@ -18,10 +87,10 @@ const addVehicle = async (req, res) => {
     const values = [
       name,
       category,
-      price || 0,
-      top_speed || 0,
-      image_url || '',
-      description || ''
+      price,
+      top_speed,
+      image_url,
+      description
     ];
 
     const [result] = await db.query(sql, values);
@@ -41,7 +110,22 @@ const addVehicle = async (req, res) => {
 const updateVehicle = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, price, top_speed, image_url, description } = req.body;
+
+    if (!isValidPositiveNumber(id)) {
+      return res.status(400).json({
+        message: 'ID invalide'
+      });
+    }
+
+    const validation = validateVehicleData(req.body);
+
+    if (validation.error) {
+      return res.status(400).json({
+        message: validation.error
+      });
+    }
+
+    const { name, category, price, top_speed, image_url, description } = validation.vehicle;
 
     const sql = `
       UPDATE vehicles
@@ -52,11 +136,11 @@ const updateVehicle = async (req, res) => {
     const values = [
       name,
       category,
-      price || 0,
-      top_speed || 0,
-      image_url || '',
-      description || '',
-      id
+      price,
+      top_speed,
+      image_url,
+      description,
+      Number(id)
     ];
 
     const [result] = await db.query(sql, values);
@@ -82,8 +166,14 @@ const deleteVehicle = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!isValidPositiveNumber(id)) {
+      return res.status(400).json({
+        message: 'ID invalide'
+      });
+    }
+
     const sql = `DELETE FROM vehicles WHERE id = ?`;
-    const [result] = await db.query(sql, [id]);
+    const [result] = await db.query(sql, [Number(id)]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
@@ -136,6 +226,12 @@ const getVehicleById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!isValidPositiveNumber(id)) {
+      return res.status(400).json({
+        message: 'ID invalide'
+      });
+    }
+
     const sql = `
       SELECT 
         v.id,
@@ -153,7 +249,7 @@ const getVehicleById = async (req, res) => {
       GROUP BY v.id
     `;
 
-    const [results] = await db.query(sql, [id]);
+    const [results] = await db.query(sql, [Number(id)]);
 
     if (results.length === 0) {
       return res.status(404).json({
@@ -175,5 +271,5 @@ module.exports = {
   updateVehicle,
   deleteVehicle,
   getAllVehicles,
-  getVehicleById,
+  getVehicleById
 };
